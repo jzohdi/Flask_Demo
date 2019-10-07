@@ -1,0 +1,37 @@
+<html style="overflow-x:hidden;" lang="en">
+  <head>
+    {# https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta #}
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+
+    <!-- Latest compiled and minified CSS -->
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+      integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{{ url_for('static', filename='styles.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
+    <script id="append-css" type="text/css"></script>
+    {{
+      JSGlue.include()
+    }}
+
+    <title>{% block title %} App {% endblock %}</title>
+  </head>
+
+  <body class="page-background">
+    <main class="back">{% block main %}{% endblock %}</main>
+  </body>
+</html>
