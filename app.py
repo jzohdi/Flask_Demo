@@ -17,6 +17,7 @@ import random
 
 # scraper dependencies
 from bs4 import BeautifulSoup
+import re
 
 # Own directory
 from helpers import Helpers
@@ -29,7 +30,7 @@ settings = get_keys(os)
 helpers_dependencies = dict(random=random, string=string)
 helpers = Helpers(settings, **helpers_dependencies)
 
-scraper_dependencies = dict(get=requests.get, BeautifulSoup=BeautifulSoup)
+scraper_dependencies = dict(get=requests.get, BeautifulSoup=BeautifulSoup, re=re)
 scraper = ScheduleScraper(**scraper_dependencies)
 
 settings['SECRET_KEY'] = os.environ.get('SECRET_KEY', helpers.get_salt(25))
@@ -98,28 +99,39 @@ def dated_url_for(endpoint, **values):
 
 @app.route('/', methods=["POST", "GET"])
 def index():
-
+    if "username" not in session:
+        return redirect(url_for("login"))
+    if "username" in session:
+        data = session.get("username")
     return render_template("index.html")
 
+@app.route("/get_data")
+def get_data():
+    data = "hello world"
+    return jsonify({"status": "success", "data" : data})
 
 @app.route('/login')
 def login():
-    return render_template("login.html")
 
+    if requests.method == "POST":
+        session["username"] = requests.form.get("username")
 
-@app.route("/get_courses/GEN/<string:course_type>", methods=["GET"])
-def get_gen(course_type):
-    class_list = scraper.get_courses_by_major("GEN", course_type)
+    print("this code runs")
+    data = 5
+    data += 100
+    return render_template("login.html", data = data)
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect( url_for("login"))
+
+@app.route("/get_courses/<string:course_type>/<string:major>", methods=["GET"])
+def get_gen(course_type, major):
+    response = requests.get("https://getgrades.com/")
+    class_list = scraper.get_courses_by_major(course_type, major)
     scraper.add_grades_to_classes(class_list)
-    class_list = sorted(class_list, key=lambda x: x.get("Grades").get("Average"), reverse=True)
-    return jsonify(class_list)
-
-
-@app.route("/get_courses/CORE/<string:course_type>", methods=["GET"])
-def get_core(course_type):
-    class_list = scraper.get_courses_by_major("CORE", course_type)
-    scraper.add_grades_to_classes(class_list)
-    class_list = sorted(class_list, key=lambda x: x.get("Grades").get("Average"), reverse=True)
+    class_list = scraper.sort_class_list(class_list)
     return jsonify(class_list)
 
 

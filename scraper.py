@@ -1,7 +1,8 @@
 class ScheduleScraper:
-    def __init__(self, BeautifulSoup, get):
+    def __init__(self, BeautifulSoup, get, re):
         self.BS = BeautifulSoup
         self.get = get
+        self.re = re
         self.__urls = {"CORE": "https://app.testudo.umd.edu/soc/202001/",
                        "GEN": "https://app.testudo.umd.edu/soc/gen-ed/202001/"}
         self.__our_umd_url = "http://www.ourumd.com/class/"
@@ -38,8 +39,19 @@ class ScheduleScraper:
         if type == "CORE":
             courses = soup.find("div", "courses-container").find_all("div", "course")
             for course in courses:
-                course_obj = {"Id": course.find("div", "course-id").string,
-                              "Name": course.find("span", "course-title").string}
+                course_credits = course.find("span", "course-min-credits").string
+                course_id = course.find("div", "course-id").string
+                course_name = course.find("span", "course-title").string
+
+                course_obj = dict(Id=course_id, Name=course_name, Credits=course_credits)
+
+                course_details = course.find("div", "approved-course-text")
+                if course_details:
+                    course_details = course_details.find("div").find("div").find_all("div")
+                    for details in course_details:
+                        title = details.find("strong").text
+                        course_obj[title] = details.text.replace(title, "")
+
                 course_list.append(course_obj)
 
         if type == "GEN":
@@ -77,7 +89,7 @@ class ScheduleScraper:
             return {"Average": "0", "Distribution": ["No grade data available"]}
 
         average = overall.find("td").string
-        if average == "None":
+        if average is None or average == "None":
             return {"Average": "0", "Distribution": ["No grade data available"]}
 
         distr = []
@@ -94,3 +106,16 @@ class ScheduleScraper:
             course_id = course.get("Id")
             grades = self.get_grades(course_id)
             class_list[index]["Grades"] = grades
+
+    @staticmethod
+    def like(text, re):
+        match_all = r'.*'
+        string_ = text
+        if not isinstance(string_, str):
+            string_ = str(string_)
+        regex = match_all + re.escape(string_) + match_all
+        return re.compile(regex, flags=re.DOTALL)
+
+    @staticmethod
+    def sort_class_list(class_list):
+        return sorted(class_list, key=lambda x: x.get("Grades").get("Average"), reverse=True)
