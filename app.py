@@ -95,15 +95,12 @@ def dated_url_for(endpoint, **values):
 
 
 """"""
-
-
 @app.route('/', methods=["POST", "GET"])
 def index():
     if "username" not in session:
         return redirect(url_for("login"))
-    if "username" in session:
-        data = session.get("username")
-    return render_template("index.html")
+    username = session.get("username")
+    return render_template("index.html", username = username)
 
 @app.route("/get_data")
 def get_data():
@@ -113,26 +110,20 @@ def get_data():
 @app.route('/login')
 def login():
 
-    if requests.method == "POST":
-        session["username"] = requests.form.get("username")
+    if request.method == "POST":
+        session["username"] = request.form.get("username")
 
-    print("this code runs")
-    data = 5
-    data += 100
-    return render_template("login.html", data = data)
+    return render_template("login.html")
 
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect( url_for("login"))
 
-@app.route("/get_courses/<string:course_type>/<string:major>", methods=["GET"])
-def get_gen(course_type, major):
-    response = requests.get("https://getgrades.com/")
-    class_list = scraper.get_courses_by_major(course_type, major)
-    scraper.add_grades_to_classes(class_list)
-    class_list = scraper.sort_class_list(class_list)
-    return jsonify(class_list)
+@app.route("/add_numbers/<int:num1>/<int:num2>", methods=["Get"])
+def add_numbers(num1, num2):
+
+    return jsonify({"answer" : int(num1) + int(num2)})
 
 
 if __name__ == '__main__':
